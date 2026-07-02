@@ -1,0 +1,16 @@
+{
+  "root": "C:\\Users\\Public\\Desktop\\jumper-Client-20251128",
+  "failureThreshold": 2,
+  "components": [
+    {
+      "name": "FileSyncEtransBlue",
+      "jar": "FileSyncEtransBlue.jar",
+      "dir": "FileSyncEtransBlueClient"
+    },
+    {
+      "name": "Netproxy",
+      "jar": "net-proxy-client.jar",
+      "dir": "NetproxyClient"
+    }
+  ]
+}
