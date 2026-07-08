@@ -5,12 +5,18 @@
     {
       "name": "FileSyncEtransBlue",
       "jar": "FileSyncEtransBlue.jar",
-      "dir": "FileSyncEtransBlueClient"
+      "dir": "FileSyncEtransBlueClient",
+      "health": {
+        "localListenPort": 7676
+      }
     },
     {
       "name": "Netproxy",
       "jar": "net-proxy-client.jar",
-      "dir": "NetproxyClient"
+      "dir": "NetproxyClient",
+      "health": {
+        "establishedRemotePort": 55000
+      }
     }
   ]
 }

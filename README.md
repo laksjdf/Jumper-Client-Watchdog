@@ -58,6 +58,8 @@ C:\ProgramData\jumper-health\
 | `name` | 日志和状态文件里的组件名 |
 | `jar` | 要检查的 jar 进程名 |
 | `dir` | 组件目录，相对于 `root` |
+| `health.localListenPort` | 可选，本地监听端口必须存在，例如 FileSync 的 `7676` |
+| `health.establishedRemotePort` | 可选，组件进程必须有到该远端端口的 Established 连接，例如 Netproxy 的 `55000` |
 
 脚本默认调用组件目录下的 `stop.bat` 和 `start.bat`。
 
@@ -137,12 +139,15 @@ Get-Content "C:\ProgramData\jumper-health\watchdog.log" -Tail 50
 
 每次检查时，watchdog 会读取 `config.json`：
 
-- watchdog 优先使用 `root\jre\bin\jcmd.exe` 统计 jar 数量
-- 某个 jar 数量等于 `1` 才视为健康，数量为 `0` 或大于 `1` 都视为异常
+- watchdog 使用 WMI 统计实际 Java 进程数量，并记录 `jcmd` 数量作为诊断信息
+- 某个 jar 进程数量等于 `1` 才进入下一层健康检查，数量为 `0` 或大于 `1` 都视为异常
+- 如果配置了 `localListenPort`，该端口必须由该组件进程监听
+- 如果配置了 `establishedRemotePort`，该组件进程必须有到该远端端口的 Established TCP 连接
 - 如果 `FileSyncEtransBlue.jar` 连续失败 2 次，只重启 `FileSyncEtransBlueClient`
 - 如果 `net-proxy-client.jar` 连续失败 2 次，只重启 `NetproxyClient`
 - 如果一个组件健康，会清零该组件的失败计数
 - 组件之间独立计数，互不影响
+- 重启后会复检健康状态，复检通过才清零失败计数
 
 以 `FileSyncEtransBlue` 为例，异常恢复时只调用：
 
