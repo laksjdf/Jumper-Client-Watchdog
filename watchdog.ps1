@@ -44,13 +44,19 @@ function Read-WatchdogState {
     return [PSCustomObject]@{ failures = [PSCustomObject]@{} }
 }
 
-function Test-JarProcess([string]$jarName) {
+function Get-JarProcessCount([string]$root, [string]$jarName) {
+    $jcmd = Join-Path $root 'jre\bin\jcmd.exe'
     $escaped = [regex]::Escape($jarName)
-    $match = Get-CimInstance Win32_Process -Filter "Name = 'javaw.exe' OR Name = 'java.exe'" |
-        Where-Object { $_.CommandLine -match $escaped } |
-        Select-Object -First 1
 
-    return $null -ne $match
+    if (Test-Path $jcmd) {
+        $matches = @(& $jcmd 2>$null | Where-Object { $_ -match $escaped })
+        return $matches.Count
+    }
+
+    Write-WatchdogLog "jcmd not found under $root; falling back to WMI for $jarName"
+    $matches = @(Get-CimInstance Win32_Process -Filter "Name = 'javaw.exe' OR Name = 'java.exe'" |
+        Where-Object { $_.CommandLine -match $escaped })
+    return $matches.Count
 }
 
 function Get-FailureCount([object]$state, [string]$name) {
@@ -95,12 +101,13 @@ function Update-ComponentHealth([object]$state, [object]$component, [string]$roo
     $name = [string]$component.name
     $jar = [string]$component.jar
     $componentDir = Join-Path $root ([string]$component.dir)
-    $isHealthy = Test-JarProcess $jar
+    $processCount = Get-JarProcessCount $root $jar
+    $isHealthy = $processCount -eq 1
 
     if ($isHealthy) {
         $failures = Get-FailureCount $state $name
         if ($failures -gt 0) {
-            Write-WatchdogLog "$name OK jar=$jar (clearing failures=$failures)"
+            Write-WatchdogLog "$name OK jar=$jar count=$processCount (clearing failures=$failures)"
         }
         Set-FailureCount $state $name 0
         return
@@ -108,7 +115,7 @@ function Update-ComponentHealth([object]$state, [object]$component, [string]$roo
 
     $failures = (Get-FailureCount $state $name) + 1
     Set-FailureCount $state $name $failures
-    Write-WatchdogLog "$name FAIL jar=$jar failures=$failures/$failThreshold"
+    Write-WatchdogLog "$name FAIL jar=$jar count=$processCount failures=$failures/$failThreshold"
 
     if ($failures -ge $failThreshold) {
         if (Restart-Component $name $componentDir) {

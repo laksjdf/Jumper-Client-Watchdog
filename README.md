@@ -137,6 +137,8 @@ Get-Content "C:\ProgramData\jumper-health\watchdog.log" -Tail 50
 
 每次检查时，watchdog 会读取 `config.json`：
 
+- watchdog 优先使用 `root\jre\bin\jcmd.exe` 统计 jar 数量
+- 某个 jar 数量等于 `1` 才视为健康，数量为 `0` 或大于 `1` 都视为异常
 - 如果 `FileSyncEtransBlue.jar` 连续失败 2 次，只重启 `FileSyncEtransBlueClient`
 - 如果 `net-proxy-client.jar` 连续失败 2 次，只重启 `NetproxyClient`
 - 如果一个组件健康，会清零该组件的失败计数
